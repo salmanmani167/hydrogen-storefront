@@ -7,7 +7,6 @@ import type {
   RecommendedProductsQuery,
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
-import {MockShopNotice} from '~/components/MockShopNotice';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
@@ -62,7 +61,6 @@ export default function Homepage() {
   const data = useLoaderData<typeof loader>();
   return (
     <div className="home">
-      {data.isShopLinked ? null : <MockShopNotice />}
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
     </div>
@@ -77,12 +75,9 @@ function FeaturedCollection({
   if (!collection) return null;
   const image = collection?.image;
   return (
-    <Link
-      className="featured-collection"
-      to={`/collections/${collection.handle}`}
-    >
+    <section className="hero">
       {image && (
-        <div className="featured-collection-image">
+        <div className="hero-image">
           <Image
             data={image}
             sizes="100vw"
@@ -90,8 +85,19 @@ function FeaturedCollection({
           />
         </div>
       )}
-      <h1>{collection.title}</h1>
-    </Link>
+      <div className="hero-content">
+        <h1 className="hero-title">
+          <span>Summer</span>
+          <span>Collection</span>
+        </h1>
+      </div>
+      <Link
+        className="hero-cta"
+        to={`/collections/${collection.handle}`}
+      >
+        SHOP NOW
+      </Link>
+    </section>
   );
 }
 
@@ -105,7 +111,9 @@ function RecommendedProducts({
       className="recommended-products"
       aria-labelledby="recommended-products"
     >
-      <h2 id="recommended-products">Recommended Products</h2>
+      <h2 id="recommended-products" className="section-heading">
+        New In
+      </h2>
       <Suspense fallback={<div>Loading...</div>}>
         <Await resolve={products}>
           {(response) => (

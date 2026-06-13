@@ -67,11 +67,41 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
+  const productCount = collection.products.nodes.length;
 
   return (
     <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
+      <div className="collection-header">
+        <h1 className="collection-title">{collection.title}</h1>
+      </div>
+      <div className="collection-toolbar">
+        <div className="collection-toolbar-left">
+          <span className="collection-count">{productCount} PRODUKTE</span>
+          <button type="button" className="collection-toggle" aria-label="Plain view">
+            <span className="collection-toggle-dot" />
+            <span>Plain</span>
+          </button>
+        </div>
+        <div className="collection-toolbar-right">
+          <button type="button" className="collection-filter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <line x1="4" y1="7" x2="20" y2="7" />
+              <line x1="7" y1="12" x2="17" y2="12" />
+              <line x1="10" y1="17" x2="14" y2="17" />
+            </svg>
+            FILTER
+          </button>
+          <label className="collection-sort">
+            <span>SORTIEREN NACH:</span>
+            <select aria-label="Sort by">
+              <option>AUSGEWÄHLT</option>
+              <option>Preis aufsteigend</option>
+              <option>Preis absteigend</option>
+              <option>Neueste</option>
+            </select>
+          </label>
+        </div>
+      </div>
       <PaginatedResourceSection<ProductItemFragment>
         connection={collection.products}
         resourcesClassName="products-grid"
@@ -81,6 +111,7 @@ export default function Collection() {
             key={product.id}
             product={product}
             loading={index < 8 ? 'eager' : undefined}
+            showNewBadge
           />
         )}
       </PaginatedResourceSection>

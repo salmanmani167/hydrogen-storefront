@@ -10,12 +10,14 @@ import {useVariantUrl} from '~/lib/variants';
 export function ProductItem({
   product,
   loading,
+  showNewBadge = false,
 }: {
   product:
     | CollectionItemFragment
     | ProductItemFragment
     | RecommendedProductFragment;
   loading?: 'eager' | 'lazy';
+  showNewBadge?: boolean;
 }) {
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
@@ -26,17 +28,20 @@ export function ProductItem({
       prefetch="intent"
       to={variantUrl}
     >
-      {image && (
-        <Image
-          alt={image.altText || product.title}
-          aspectRatio="1/1"
-          data={image}
-          loading={loading}
-          sizes="(min-width: 45em) 400px, 100vw"
-        />
-      )}
-      <h4>{product.title}</h4>
-      <small>
+      <div className="product-item-image">
+        {showNewBadge && <span className="product-badge">NEW</span>}
+        {image && (
+          <Image
+            alt={image.altText || product.title}
+            aspectRatio="3/4"
+            data={image}
+            loading={loading}
+            sizes="(min-width: 45em) 400px, 100vw"
+          />
+        )}
+      </div>
+      <h4 className="product-item-title">{product.title}</h4>
+      <small className="product-item-price">
         <Money data={product.priceRange.minVariantPrice} />
       </small>
     </Link>

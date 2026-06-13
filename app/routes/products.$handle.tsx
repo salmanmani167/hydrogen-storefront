@@ -12,31 +12,18 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {Image, Money} from '@shopify/hydrogen';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [
-    {title: `Hydrogen | ${data?.product.title ?? ''}`},
-    {
-      rel: 'canonical',
-      href: `/products/${data?.product.handle}`,
-    },
-  ];
+  return [{title: `Sidejeans | ${data?.product.title ?? ''}`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
@@ -49,14 +36,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
 
   if (!product?.id) {
     throw new Response(null, {status: 404});
   }
 
-  // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
   return {
@@ -64,62 +49,147 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   };
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
 function loadDeferredData({context, params}: Route.LoaderArgs) {
-  // Put any API calls that is not critical to be available on first page render
-  // For example: product reviews, product recommendations, social feeds.
-
   return {};
 }
 
 export default function Product() {
   const {product} = useLoaderData<typeof loader>();
 
-  // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
     product.selectedOrFirstAvailableVariant,
     getAdjacentAndFirstAvailableVariants(product),
   );
 
-  // Sets the search param to the selected variant without navigation
-  // only when no search params are set in the url
   useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
 
-  // Get the product options array
   const productOptions = getProductOptions({
     ...product,
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, descriptionHtml} = product;
+  const {title, descriptionHtml, media, vendor} = product;
 
   return (
-    <div className="product">
-      <ProductImage image={selectedVariant?.image} />
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
-        />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
+    <div className="product-page">
+      {/* Product media left / info right — matching main-product layout */}
+      <div className="product-main-top">
+        {/* Media Section */}
+        <div className="product-media-section">
+          {media && media.nodes && media.nodes.length > 0 ? (
+            <div className="product-media-grid">
+              {media.nodes.slice(0, 5).map((med: any) => (
+                <div key={med.id} className="product-media-image">
+                  {med.__typename === 'Video' ? (
+                    <video
+                      src={med.sources?.[0]?.url}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      style={{width: '100%', display: 'block'}}
+                    />
+                  ) : (
+                    <Image
+                      data={med.image || med.previewImage || med}
+                      sizes="(min-width: 45em) 50vw, 100vw"
+                      aspectRatio="3/4"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ProductImage image={selectedVariant?.image} />
+          )}
+        </div>
+
+        {/* Info Section */}
+        <div className="product-info-section">
+          <div className="product-info-inner">
+            {/* Title & Price */}
+            <div className="product-block">
+              <h1 className="product-title">{title}</h1>
+              <ProductPrice
+                price={selectedVariant?.price}
+                compareAtPrice={selectedVariant?.compareAtPrice}
+              />
+            </div>
+
+            {/* Model info text */}
+            {product.metafields?.custom?.model_heigh && (
+              <div className="product-block product-model-text">
+                {product.metafields.custom.model_heigh.value}
+              </div>
+            )}
+
+            {/* Variant picker & buy buttons */}
+            <div className="product-block">
+              <ProductForm
+                productOptions={productOptions}
+                selectedVariant={selectedVariant}
+              />
+            </div>
+
+            {/* Info image (slider/shipping) */}
+            <div className="product-block product-info-image">
+              <img
+                src="https://cdn.shopify.com/s/files/1/0014/1361/1629/files/V2_33edfad9-f4ec-4775-b103-9cccc65b9f0d.jpg?v=1780555578"
+                alt="Free shipping info"
+                width="700"
+                style={{maxWidth: '100%', height: 'auto'}}
+              />
+            </div>
+
+            {/* Description accordion */}
+            <div className="product-block product-description-accordion">
+              <details className="product-accordion" open>
+                <summary className="product-accordion-summary">
+                  <span>Description</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </summary>
+                <div className="product-accordion-content" dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+              </details>
+            </div>
+
+            {/* Size Guide accordion */}
+            <div className="product-block product-description-accordion">
+              <details className="product-accordion">
+                <summary className="product-accordion-summary">
+                  <span>Size Guide</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </summary>
+                <div className="product-accordion-content">
+                  <p>Please refer to the product measurements for sizing.</p>
+                </div>
+              </details>
+            </div>
+
+            {/* Shipping accordion */}
+            <div className="product-block product-description-accordion">
+              <details className="product-accordion">
+                <summary className="product-accordion-summary">
+                  <span>Versand</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </summary>
+                <div className="product-accordion-content">
+                  <p>Kostenlose Lieferung ab 120€ (in DE). 1-2 Werktage Lieferzeit.</p>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
       </div>
+
       <Analytics.ProductView
         data={{
           products: [

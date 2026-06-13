@@ -1,6 +1,4 @@
 /**
- * Configure Tailwind v4 in this file using CSS variables and directives:
- * https://tailwindcss.com/docs/v4-beta#css-first-configuration
+ * Tailwind is not used — all styles are in app.css.
+ * This file intentionally left empty.
  */
-
-@import 'tailwindcss';

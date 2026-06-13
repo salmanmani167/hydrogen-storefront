@@ -23,27 +23,35 @@ export function ProductItem({
   const image = product.featuredImage;
   return (
     <Link
-      className="product-item"
+      className="card-product"
       key={product.id}
       prefetch="intent"
       to={variantUrl}
     >
-      <div className="product-item-image">
-        {showNewBadge && <span className="product-badge">NEW</span>}
-        {image && (
-          <Image
-            alt={image.altText || product.title}
-            aspectRatio="3/4"
-            data={image}
-            loading={loading}
-            sizes="(min-width: 45em) 400px, 100vw"
-          />
+      <div className="card-media">
+        {showNewBadge && (
+          <span className="badge badge--new">NEW</span>
         )}
+        <div className="card-product--image">
+          {image ? (
+            <Image
+              alt={image.altText || product.title}
+              data={image}
+              loading={loading}
+              aspectRatio="3/4"
+              sizes="(min-width: 45em) 400px, 100vw"
+            />
+          ) : (
+            <div className="card-product--placeholder" />
+          )}
+        </div>
       </div>
-      <h4 className="product-item-title">{product.title}</h4>
-      <small className="product-item-price">
-        <Money data={product.priceRange.minVariantPrice} />
-      </small>
+      <div className="card-product--info">
+        <h3 className="card-product--title">{product.title}</h3>
+        <div className="card-product--price">
+          <Money data={product.priceRange.minVariantPrice} />
+        </div>
+      </div>
     </Link>
   );
 }

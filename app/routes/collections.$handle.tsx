@@ -7,28 +7,20 @@ import {ProductItem} from '~/components/ProductItem';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
+  return [{title: `Sidejeans | ${data?.collection.title ?? ''}`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 48,
   });
 
   if (!handle) {
@@ -38,7 +30,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
     }),
   ]);
 
@@ -48,7 +39,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     });
   }
 
-  // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
   return {
@@ -56,11 +46,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   };
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
 function loadDeferredData({context}: Route.LoaderArgs) {
   return {};
 }
@@ -70,20 +55,23 @@ export default function Collection() {
   const productCount = collection.products.nodes.length;
 
   return (
-    <div className="collection">
-      <div className="collection-header">
-        <h1 className="collection-title">{collection.title}</h1>
+    <div className="collection-page">
+      {/* Collection Banner (text-only) — like main-collection-banner */}
+      <div className="collection-banner-std">
+        <h1 className="h2">{collection.title}</h1>
       </div>
+
+      {/* Toolbar — filters + sort */}
       <div className="collection-toolbar">
         <div className="collection-toolbar-left">
           <span className="collection-count">{productCount} PRODUKTE</span>
-          <button type="button" className="collection-toggle" aria-label="Plain view">
-            <span className="collection-toggle-dot" />
-            <span>Plain</span>
+          <button type="button" className="collection-toggle" aria-label="Toggle model/plain view">
+            <span className="collection-toggle-thumb" />
+            <span>Model</span>
           </button>
         </div>
         <div className="collection-toolbar-right">
-          <button type="button" className="collection-filter">
+          <button type="button" className="collection-filter-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <line x1="4" y1="7" x2="20" y2="7" />
               <line x1="7" y1="12" x2="17" y2="12" />
@@ -91,7 +79,7 @@ export default function Collection() {
             </svg>
             FILTER
           </button>
-          <label className="collection-sort">
+          <label className="collection-sort-label">
             <span>SORTIEREN NACH:</span>
             <select aria-label="Sort by">
               <option>AUSGEWÄHLT</option>
@@ -102,9 +90,11 @@ export default function Collection() {
           </label>
         </div>
       </div>
+
+      {/* Product Grid */}
       <PaginatedResourceSection<ProductItemFragment>
         connection={collection.products}
-        resourcesClassName="products-grid"
+        resourcesClassName="collection-products-grid"
       >
         {({node: product, index}) => (
           <ProductItem

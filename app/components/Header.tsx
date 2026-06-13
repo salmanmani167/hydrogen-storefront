@@ -37,12 +37,7 @@ export function Header({
           publicStoreDomain={publicStoreDomain}
         />
       </div>
-      <NavLink
-        prefetch="intent"
-        to="/"
-        className="header-logo"
-        end
-      >
+      <NavLink prefetch="intent" to="/" className="header-logo" end>
         {shop.name}
       </NavLink>
       <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
@@ -67,20 +62,12 @@ export function HeaderMenu({
   return (
     <nav className={className} role="navigation">
       {viewport === 'mobile' && (
-        <NavLink
-          end
-          onClick={close}
-          prefetch="intent"
-          style={activeLinkStyle}
-          to="/"
-        >
+        <NavLink end onClick={close} prefetch="intent" to="/">
           Home
         </NavLink>
       )}
       {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
         if (!item.url) return null;
-
-        // if the url is internal, we strip the domain
         const url =
           item.url.includes('myshopify.com') ||
           item.url.includes(publicStoreDomain) ||
@@ -94,7 +81,6 @@ export function HeaderMenu({
             key={item.id}
             onClick={close}
             prefetch="intent"
-            style={activeLinkStyle}
             to={url}
           >
             {item.title}
@@ -113,7 +99,12 @@ function HeaderCtas({
     <nav className="header-ctas" role="navigation">
       <span className="header-locale">DE (€)</span>
       <SearchToggle />
-      <NavLink prefetch="intent" to="/account" className="header-icon" aria-label="Account">
+      <NavLink
+        prefetch="intent"
+        to="/account"
+        className="header-icon"
+        aria-label="Account"
+      >
         <Suspense fallback={<AccountIcon />}>
           <Await resolve={isLoggedIn} errorElement={<AccountIcon />}>
             {() => <AccountIcon />}
@@ -133,7 +124,14 @@ function HeaderMenuMobileToggle() {
       onClick={() => open('mobile')}
       aria-label="Open menu"
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
         <line x1="3" y1="7" x2="21" y2="7" />
         <line x1="3" y1="12" x2="21" y2="12" />
         <line x1="3" y1="17" x2="21" y2="17" />
@@ -145,8 +143,19 @@ function HeaderMenuMobileToggle() {
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="reset header-icon" onClick={() => open('search')} aria-label="Search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <button
+      className="reset header-icon"
+      onClick={() => open('search')}
+      aria-label="Search"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
         <circle cx="11" cy="11" r="7" />
         <line x1="16.5" y1="16.5" x2="21" y2="21" />
       </svg>
@@ -156,7 +165,14 @@ function SearchToggle() {
 
 function AccountIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
     </svg>
@@ -183,7 +199,14 @@ function CartBadge({count}: {count: number}) {
         } as CartViewPayload);
       }}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
         <path d="M6 7h12l-1 13H7L6 7z" />
         <path d="M9 7a3 3 0 0 1 6 0" />
       </svg>
@@ -249,16 +272,3 @@ const FALLBACK_HEADER_MENU = {
     },
   ],
 };
-
-function activeLinkStyle({
-  isActive,
-  isPending,
-}: {
-  isActive: boolean;
-  isPending: boolean;
-}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
-  };
-}

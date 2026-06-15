@@ -1268,9 +1268,6 @@ button.reset:hover:not(:has(> *)) {
   .collection-toolbar-left,
   .collection-toolbar-right { gap: 10px; }
 }
-  display: flex;
-  grid-gap: 0.5rem;
-}
 
 .product-price-on-sale s {
   opacity: 0.5;

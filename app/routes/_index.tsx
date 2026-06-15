@@ -19,13 +19,23 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const [{collections}] = await Promise.all([
+  const [{collections}, {shop}] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
+    context.storefront.query(BANNER_METAFIELDS_QUERY),
   ]);
+
+  // Transform metafields array into a keyed object for easy access
+  const banner: BannerMetafields = {};
+  if (shop?.metafields) {
+    for (const mf of shop.metafields) {
+      if (mf) banner[mf.key as keyof BannerMetafields] = mf;
+    }
+  }
 
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
     featuredCollection: collections.nodes[0],
+    banner,
   };
 }
 
@@ -62,27 +72,37 @@ const CONTENT_CARDS = [
 ];
 
 export default function Homepage() {
-  const data = useLoaderData<typeof loader>();
+  const {featuredCollection, featuredProducts, banner} =
+    useLoaderData<typeof loader>();
   return (
     <div className="home-page">
       {/* Hero Banner — fullscreen, matching Sidejeans image-banner section */}
-      <HeroBanner collection={data.featuredCollection} />
+      <HeroBanner collection={featuredCollection} banner={banner} />
 
       {/* Content Cards — 2×2 grid matching section-content-cards */}
       <ContentCardsSection />
 
       {/* Featured Products — product grid matching featured-collection section */}
-      <FeaturedProducts products={data.featuredProducts} />
+      <FeaturedProducts products={featuredProducts} />
     </div>
   );
 }
 
 function HeroBanner({
   collection,
+  banner,
 }: {
   collection: FeaturedCollectionFragment;
+  banner: BannerMetafields | null;
 }) {
   if (!collection) return null;
+
+  // Use metafields if available, otherwise fall back to defaults
+  const heading = banner?.banner_heading?.value || 'Summer Collection';
+  const subtext = banner?.banner_subtext?.value || '';
+  const buttonText = banner?.banner_button_text?.value || 'SHOP NOW';
+  const buttonLink = banner?.banner_button_link?.value || `/collections/${collection.handle}`;
+
   const image = collection?.image;
   return (
     <section className="hero-banner banner-style-fullscreen">
@@ -99,12 +119,10 @@ function HeroBanner({
       )}
       <div className="hero-banner-overlay" />
       <div className="hero-banner-text">
-        <h1 className="h2">Summer Collection</h1>
-        <Link
-          className="button button--outline hero-banner-cta"
-          to={`/collections/${collection.handle}`}
-        >
-          SHOP NOW
+        {subtext && <p className="hero-banner-subtext">{subtext}</p>}
+        <h1 className="h2">{heading}</h1>
+        <Link className="button button--outline hero-banner-cta" to={buttonLink}>
+          {buttonText}
         </Link>
       </div>
     </section>
@@ -219,3 +237,28 @@ const FEATURED_PRODUCTS_QUERY = `#graphql
     }
   }
 ` as const;
+
+const BANNER_METAFIELDS_QUERY = `#graphql
+  query BannerMetafields ($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    shop {
+      metafields(identifiers: [
+        {namespace: "custom", key: "banner_heading"}
+        {namespace: "custom", key: "banner_subtext"}
+        {namespace: "custom", key: "banner_button_text"}
+        {namespace: "custom", key: "banner_button_link"}
+      ]) {
+        namespace
+        key
+        value
+      }
+    }
+  }
+` as const;
+
+type BannerMetafields = {
+  banner_heading?: {value: string};
+  banner_subtext?: {value: string};
+  banner_button_text?: {value: string};
+  banner_button_link?: {value: string};
+};
